@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Backend build outputs & cache
+backend/artifacts/
+backend/cache/
+backend/node_modules/
+backend/coverage/
+backend/coverage.json
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

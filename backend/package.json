@@ -1,0 +1,31 @@
+{
+  "name": "workshop-credit-management-system",
+  "version": "1.0.0",
+  "description": "Admin-only configuration contract and ERC-20 workshop-credit token system",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:report": "node scripts/test-reporter.js",
+    "demo": "hardhat run scripts/demo.js",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "erc20",
+    "hardhat",
+    "smart-contracts"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^18.0.9",
+    "hardhat": "^2.29.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}
