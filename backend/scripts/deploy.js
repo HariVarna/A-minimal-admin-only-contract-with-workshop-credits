@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+require("dotenv").config({ override: true });
 
 async function main() {
   console.log("==================================================");
@@ -29,9 +30,15 @@ async function main() {
     process.exit(1);
   }
 
-  if (!privateKey || privateKey.trim() === "") {
-    console.error("\n❌ Error: Missing PRIVATE_KEY environment variable.");
-    console.error("   Please define PRIVATE_KEY in backend/.env (refer to .env.example).");
+  const cleanKey = (privateKey || "").trim().replace(/^0x/, "");
+  if (!privateKey || privateKey.trim() === "" || privateKey.includes("your_private_key_here") || !/^[0-9a-fA-F]{64}$/.test(cleanKey)) {
+    console.error("\n❌ Error: Invalid or placeholder PRIVATE_KEY in backend/.env.");
+    console.error("   A valid 32-byte (64 hexadecimal characters) private key is required to deploy to Sepolia.");
+    console.error("   - Open 'backend/.env'");
+    console.error("   - Replace 'your_private_key_here' with your wallet private key (e.g. from MetaMask)");
+    console.error("   - Ensure your account has Sepolia testnet ETH for gas fees.\n");
+    console.error("   💡 Tip: If you just want to test locally without testnet gas, run:");
+    console.error("      npm run demo:local\n");
     process.exit(1);
   }
 
@@ -41,6 +48,7 @@ async function main() {
   const signers = await hre.ethers.getSigners();
   if (!signers || signers.length === 0) {
     console.error("\n❌ Error: No deployer account loaded from configured private key.");
+    console.error("   Please check backend/.env PRIVATE_KEY format.");
     process.exit(1);
   }
   const deployer = signers[0];

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+require("dotenv").config({ override: true });
 
 async function main() {
   console.log("==================================================");

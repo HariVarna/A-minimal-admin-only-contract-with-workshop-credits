@@ -1,14 +1,14 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+require("dotenv").config({ override: true });
 
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
-// Normalize private key with '0x' prefix if provided
-const normalizedPrivateKey = PRIVATE_KEY
-  ? (PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : `0x${PRIVATE_KEY}`)
-  : "";
+// Safely validate and normalize private key (must be 32 bytes / 64 hex characters)
+const cleanPrivateKey = (PRIVATE_KEY || "").trim().replace(/^0x/, "");
+const isValidPrivateKey = /^[0-9a-fA-F]{64}$/.test(cleanPrivateKey);
+const accounts = isValidPrivateKey ? [`0x${cleanPrivateKey}`] : [];
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -30,7 +30,7 @@ module.exports = {
     },
     sepolia: {
       url: SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
-      accounts: normalizedPrivateKey ? [normalizedPrivateKey] : [],
+      accounts: accounts,
       chainId: 11155111,
     },
   },
