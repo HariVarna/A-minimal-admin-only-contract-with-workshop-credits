@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 const hre = require("hardhat");
 
 async function main() {
@@ -8,14 +9,27 @@ async function main() {
     fs.mkdirSync(reportsDir, { recursive: true });
   }
 
-  // Intercept stdout to capture Mocha's JSON reporter output
+  // Determine npm version accurately
+  let npmVersion = "unknown";
+  try {
+    npmVersion = execSync("npm -v", { encoding: "utf8" }).trim();
+  } catch (e) {
+    npmVersion = process.env.npm_config_user_agent || "N/A";
+  }
+
+  console.log("==================================================");
+  console.log("   EXECUTING AUTOMATED TEST SUITE FOR REPORT      ");
+  console.log("==================================================");
+  console.log("Running Hardhat Mocha test runner...");
+
+  // Intercept stdout to capture Mocha's JSON reporter output without raw terminal clutter
   let stdoutData = "";
   const originalWrite = process.stdout.write.bind(process.stdout);
   
   process.stdout.write = (chunk, encoding, callback) => {
     stdoutData += chunk.toString();
-    // Also display in terminal for user visibility
-    return originalWrite(chunk, encoding, callback);
+    if (typeof callback === "function") callback();
+    return true;
   };
 
   // Configure Hardhat mocha runner to use JSON reporter
@@ -73,7 +87,7 @@ async function main() {
     executionTimestamp: new Date().toISOString(),
     environment: {
       nodeVersion: process.version,
-      npmVersion: process.env.npm_config_user_agent || "N/A",
+      npmVersion: npmVersion,
       hardhatVersion: hardhatPkg.version,
       solidityCompilerVersion: "0.8.24",
     },
@@ -108,6 +122,7 @@ async function main() {
 
 ## Environment Details
 - **Node.js:** \`${reportData.environment.nodeVersion}\`
+- **npm:** \`${reportData.environment.npmVersion}\`
 - **Hardhat:** \`${reportData.environment.hardhatVersion}\`
 - **Solidity Compiler:** \`${reportData.environment.solidityCompilerVersion}\`
 
@@ -124,7 +139,7 @@ async function main() {
 ${reportData.testFilesExecuted.map((file) => `- \`${file}\``).join("\n")}
 
 ## Detailed Test Results
-${reportData.passedTests.map((t) => `- [x] **${t.title}** (${t.file}) - ${t.durationMs}ms`).join("\n")}
+${reportData.passedTests.map((t) => `- [x] **${t.title}** (\`${t.file}\`) - ${t.durationMs}ms`).join("\n")}
 
 ${
   reportData.failureDetails.length > 0
@@ -139,13 +154,22 @@ ${
 `;
   fs.writeFileSync(mdReportPath, mdContent, "utf8");
 
+  // Print formatted report directly in terminal
   console.log("\n==================================================");
-  console.log("             AUTOMATED TEST REPORT                ");
+  console.log("             TEST EXECUTION SUMMARY               ");
   console.log("==================================================");
+  console.log(`Project:        ${reportData.projectTitle}`);
   console.log(`Status:         ${status}`);
   console.log(`Total Tests:    ${totalCount}`);
   console.log(`Passing:        ${passingCount}`);
   console.log(`Failing:        ${failingCount}`);
+  console.log(`Duration:       ${reportData.summary.durationMs} ms`);
+  console.log(`Node / Hardhat: ${reportData.environment.nodeVersion} / ${reportData.environment.hardhatVersion}`);
+  console.log("--------------------------------------------------");
+  reportData.passedTests.forEach((t, i) => {
+    console.log(`  ✓ [${i + 1}/${totalCount}] ${t.title}`);
+  });
+  console.log("--------------------------------------------------");
   console.log(`JSON Report:    ${jsonReportPath}`);
   console.log(`MD Report:      ${mdReportPath}`);
   console.log("==================================================");

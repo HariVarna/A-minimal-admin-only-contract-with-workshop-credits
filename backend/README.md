@@ -1,151 +1,213 @@
-# Workshop Credit Management System (Backend)
+# Workshop Credit Management System
 
-An administrative configuration contract and ERC-20 workshop-credit token built with Solidity 0.8.24, OpenZeppelin Contracts v5, and Hardhat 2 (ethers v6).
-
----
-
-## 1. Project Overview
-
-The **Workshop Credit Management System** fulfills a department's requirement for:
-1. **Admin-Only Workshop Configuration (`WorkshopConfig.sol`)**:
-   - Manages a boolean switch `workshopEnabled` controlling whether workshop activities/registration are active.
-   - Enforces administrative access control using OpenZeppelin's `Ownable` pattern.
-   - Transparently emits `WorkshopConfigUpdated` events upon state modification.
-   - Provides a public view getter `getWorkshopEnabled()` accessible to any participant or external contract.
-
-2. **ERC-20 Workshop Credit Token (`WorkshopCredit.sol`)**:
-   - Standard ERC-20 token named **"Workshop Credit"** with symbol **"WSC"** and standard 18 decimals.
-   - Mints a fixed initial supply of **100,000 WSC** (`100,000 * 10^18` base units) directly to the deployer upon creation.
-   - Securely tracks balances and facilitates peer-to-peer credit transfers among participants, instructors, and attendees.
+A production-grade, admin-only configuration contract and ERC-20 workshop-credit token system built with **Solidity 0.8.24**, **OpenZeppelin Contracts v5**, and **Hardhat 2** with **ethers v6**.
 
 ---
 
-## 2. Prerequisites
+## 1. Project Overview & Architecture
 
-Ensure your development environment meets the following requirements:
+The system satisfies two key institutional requirements:
+1. **Admin-Only Workshop Configuration (`contracts/WorkshopConfig.sol`)**:
+   - Manages a boolean flag `workshopEnabled` controlling whether workshop enrollment and features are active.
+   - Enforces administrative access control using OpenZeppelin's `Ownable` pattern (`Ownable(msg.sender)`).
+   - Only the contract owner can call `setWorkshopEnabled(bool enabled)`.
+   - Anyone can call the public getter `getWorkshopEnabled()`.
+   - Emits a `WorkshopConfigUpdated(bool indexed enabled, address indexed updatedBy)` event upon modification.
+2. **ERC-20 Workshop Credit Token (`contracts/WorkshopCredit.sol`)**:
+   - Official OpenZeppelin `ERC20` implementation with name `"Workshop Credit"`, symbol `"WSC"`, and `18` decimals.
+   - Mints an initial fixed supply of exactly **100,000 WSC** (`100,000 * 10^18` base units) to the deploying admin.
+   - Facilitates peer transfers among participants, instructors, and attendees with standard ERC-20 balance accounting and overdraft protection.
+
+---
+
+## 2. Prerequisites & Environment
+
 - **Node.js**: `v18.x`, `v20.x`, `v22.x`, or `v24.x` (tested on `v24.17.0`)
-- **npm**: `v9.x`, `v10.x`, or `v11.x` (tested on `11.13.0`)
-- **Hardhat**: `2.29.1` (Hardhat 2 series with ethers v6)
-- **Solidity Compiler**: `0.8.24`
+- **npm**: `v9.x`+ (tested on `11.13.0`)
+- **Hardhat**: `2.29.1` (Hardhat 2 with `@nomicfoundation/hardhat-toolbox` v5 and ethers v6)
+- **Solidity Compiler**: `0.8.24` (evm target: paris, optimizer enabled: 200 runs)
 
 ---
 
-## 3. Installation & Setup
+## 3. Installation & Local Verification
 
-1. Open your terminal and navigate to the `backend` folder:
+1. Navigate to the `backend` directory:
    ```bash
    cd backend
    ```
-
 2. Install dependencies:
    ```bash
    npm install
    ```
+3. Compile all smart contracts:
+   ```bash
+   npm run compile
+   ```
+4. Run the full automated test suite (19 unit tests):
+   ```bash
+   npm test
+   ```
+5. Generate the official machine-readable test execution report:
+   ```bash
+   npm run test:report
+   ```
+   *Reports generated:*
+   - `reports/test-report.json` (Machine-readable JSON)
+   - `reports/test-report.md` (Markdown summary)
 
-3. (Optional) Set up environment variables for Sepolia deployment:
+6. Run the local in-memory simulation:
+   ```bash
+   npm run demo:local
+   ```
+
+---
+
+## 4. Sepolia Testnet Deployment & Interaction
+
+### Safe Credential Configuration
+
+1. Copy `.env.example` to create your local `.env`:
    ```bash
    cp .env.example .env
    ```
-   *Note: Compilation, testing, reporting, and local demo execution run completely in-memory without requiring any `.env` file or external network connection.*
-
----
-
-## 4. Compilation
-
-Compile all smart contracts using Hardhat:
-```bash
-npm run compile
-```
-Expected output:
-```text
-Compiled 8 Solidity files successfully (evm target: paris).
-```
-
----
-
-## 5. Running Automated Tests
-
-Run the full automated test suite containing 19 comprehensive unit tests:
-```bash
-npm test
-```
-
-### Expected Test Results:
-```text
-  WorkshopConfig Contract
-    Deployment and Initial State
-      ✓ 1. Should deploy successfully with a valid contract address
-      ✓ 2. Should confirm the deployer is set as the contract owner
-      ✓ 3. Should confirm the initial workshopEnabled configuration is false
-    Configuration Updates and Access Control
-      ✓ 4. Should confirm the owner can enable the configuration
-      ✓ 5. Should confirm the owner can disable the configuration after enabling
-      ✓ 6. Should confirm non-owner setter calls revert
-      ✓ 7. Should confirm the getter is publicly accessible by any account
-      ✓ 8. Should confirm the expected event and event arguments on status changes
-
-  WorkshopCredit Token Contract
-    Deployment and Token Metadata
-      ✓ 1. Should deploy successfully with a valid contract address
-      ✓ 2. Should verify token name is 'Workshop Credit'
-      ✓ 3. Should verify token symbol is 'WSC'
-      ✓ 4. Should verify decimals is 18
-      ✓ 5. Should verify the initial total supply is 100,000 tokens in base units
-      ✓ 6. Should verify the deployer receives all initial tokens
-    Token Transfers and Balance Accounting
-      ✓ 7. Should transfer tokens to a second account
-      ✓ 8. Should verify sender and recipient balances after transfer
-      ✓ 9. Should verify the standard Transfer event is emitted with correct parameters
-      ✓ 10. Should verify that a transfer exceeding the sender's balance reverts
-      ✓ 11. Should verify that transfers respect ERC-20 balance accounting across multiple hops
-
-  19 passing
-```
-
----
-
-## 6. Generating Machine-Readable Test Report
-
-Execute the test suite and automatically generate structured reports:
-```bash
-npm run test:report
-```
-This produces two artifacts in the `reports/` folder:
-- **`reports/test-report.json`**: Machine-readable JSON summary containing test pass/fail counts, execution timestamps, environment versions, and failure traces.
-- **`reports/test-report.md`**: Human-readable Markdown summary suitable for documentation and audits.
-
----
-
-## 7. Running the Live Demo
-
-Run the end-to-end interactive simulation script:
-```bash
-npm run demo
-```
-This script demonstrates contract deployment, admin activation, non-owner revert protection, token balance distribution, peer transfer, and overdraft rejection on Hardhat's in-memory node.
-
----
-
-## 8. Deployment Prerequisites (Ethereum Sepolia Testnet)
-
-To deploy to Ethereum Sepolia:
-1. Obtain Sepolia testnet ETH from a public faucet (e.g., Google Cloud Web3 Faucet, Alchemy Faucet, or Infura Faucet).
-2. Configure `.env` inside `backend/`:
+2. Populate the parameters inside `backend/.env`:
    ```ini
+   # Ethereum Sepolia Testnet RPC URL (Public node, Infura, or Alchemy)
    SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-   PRIVATE_KEY=your_actual_wallet_private_key_without_spaces
+
+   # Deployer Wallet Private Key (MUST be dedicated testnet account with SepoliaETH)
+   PRIVATE_KEY=your_testnet_private_key_without_quotes
+
+   # Etherscan API Key for block explorer contract verification
    ETHERSCAN_API_KEY=your_etherscan_api_key
    ```
-3. Run the Sepolia deployment command:
+   > [!CAUTION]
+   > - **Never commit `.env` to version control.** It is explicitly ignored in `.gitignore`.
+   > - **Never use a wallet containing real funds.** Always use a dedicated testnet address.
+   > - Local compilation, automated tests, and local demos run 100% offline without needing `.env`.
+
+### Step-by-Step Deployment to Sepolia
+
+1. Obtain SepoliaETH from a public faucet:
+   - [Google Cloud Web3 Sepolia Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+   - [Sepolia PoW Faucet](https://sepoliafaucet.com)
+   - [Chainlink Faucets](https://faucets.chain.link/sepolia)
+2. Deploy both contracts to Sepolia:
    ```bash
    npm run deploy:sepolia
    ```
+   *The deployment script automatically:*
+   - Validates that the network is Sepolia (`chainId: 11155111`).
+   - Verifies the deployer balance (requires ≥ 0.005 SepoliaETH for gas).
+   - Deploys `WorkshopConfig` and `WorkshopCredit`.
+   - Checks initial state (flag is `false`, supply is exactly `100,000 WSC`).
+   - Saves deployment records to `deployments/sepolia.json`.
 
 ---
 
-## 9. Security Precautions
+## 5. Contract Source Verification
 
-- **Never Commit Private Keys**: The `.env` file is excluded in `.gitignore`. Never paste private keys directly into scripts, contracts, or version control.
-- **Dedicated Testnet Wallet**: Always use a dedicated development wallet containing only testnet funds. Never use a wallet holding mainnet assets.
-- **Access Control Verification**: The `WorkshopConfig` setter enforces `onlyOwner` checks inherited from OpenZeppelin `Ownable.sol`. Unauthorized attempts revert with `OwnableUnauthorizedAccount`.
-- **Arithmetic & Overdraft Protection**: Built with Solidity `0.8.24` and OpenZeppelin `ERC20.sol`, protecting against integer underflow/overflow and unauthorized balance overdrafts.
+Verify the deployed contract source code on Etherscan and Sourcify:
+
+```bash
+npm run verify:sepolia
+```
+
+Alternatively, run the individual Hardhat verify commands:
+```bash
+# Verify WorkshopConfig (no constructor arguments)
+npx hardhat verify --network sepolia <WORKSHOP_CONFIG_ADDRESS>
+
+# Verify WorkshopCredit (no constructor arguments)
+npx hardhat verify --network sepolia <WORKSHOP_CREDIT_ADDRESS>
+```
+
+---
+
+## 6. Interaction Guide: Option A (Hardhat CLI)
+
+### 1. Read-Only State Inspection (No Private Key Required)
+Inspect deployed Sepolia contracts without spending gas or loading private keys:
+```bash
+npm run demo
+```
+This reads the current `workshopEnabled` flag, owner address, token name, symbol, decimals, total supply, and deployer balance from the live blockchain.
+
+### 2. Owner-Only Configuration Toggle
+Toggle the `workshopEnabled` flag on Sepolia as the owner:
+```bash
+# Toggle flag
+DEMO_TOGGLE=true npm run demo
+
+# Toggle flag and restore to original state
+DEMO_TOGGLE=true DEMO_RESTORE=true npm run demo
+```
+*Security verification: If the connected signer does not match the contract owner, the script safely halts before sending any transaction.*
+
+### 3. Transfer Workshop Credits
+Transfer tokens to a student or participant address on Sepolia:
+```bash
+DEMO_TRANSFER_TO=0xRecipientAddressHere DEMO_AMOUNT=25 npm run demo
+```
+
+---
+
+## 7. Interaction Guide: Option B (Remix IDE)
+
+You can also interact with the deployed contracts visually through [Remix IDE](https://remix.ethereum.org).
+
+### Step 1: Load Source Files in Remix
+1. Open [Remix IDE](https://remix.ethereum.org).
+2. Create `WorkshopConfig.sol` and copy the code from [`contracts/WorkshopConfig.sol`](contracts/WorkshopConfig.sol).
+3. Create `WorkshopCredit.sol` and copy the code from [`contracts/WorkshopCredit.sol`](contracts/WorkshopCredit.sol).
+4. In the **Solidity Compiler** tab:
+   - Set Compiler to `0.8.24`.
+   - Enable Optimization (200 runs).
+   - Click **Compile**.
+
+### Step 2: Connect to Sepolia via MetaMask
+1. In the **Deploy & Run Transactions** tab:
+   - Set **Environment** to **Injected Provider - MetaMask**.
+   - Make sure your MetaMask is connected to **Sepolia testnet** (`Chain ID: 11155111`).
+2. Instead of deploying a new instance:
+   - Select `WorkshopConfig` from the Contract dropdown.
+   - Paste your deployed `WorkshopConfig` address into the **At Address** field.
+   - Click **At Address**.
+   - Repeat for `WorkshopCredit` using its deployed address.
+
+### Step 3: Interacting with WorkshopConfig Functions
+- `getWorkshopEnabled()`: Click to read the current boolean flag (`false` or `true`). Free call (no gas).
+- `owner()`: Click to view the administrator wallet address. Free call.
+- `setWorkshopEnabled(bool enabled)`:
+  - Enter `true` or `false` in the input field.
+  - Click the orange button to submit an on-chain transaction.
+  - Confirm the transaction in MetaMask.
+  - *Note:* If called from a non-owner address, the transaction will revert with `OwnableUnauthorizedAccount`.
+
+### Step 4: Interacting with WorkshopCredit Functions
+- `name()`: Returns `"Workshop Credit"`.
+- `symbol()`: Returns `"WSC"`.
+- `decimals()`: Returns `18`.
+- `totalSupply()`: Returns `100000000000000000000000` (100,000 WSC in 18 decimal base units).
+- `balanceOf(address)`: Enter any address to view their balance in base units.
+- `transfer(address to, uint256 amount)`:
+  - **Important Token Unit Conversion:** 1 WSC = 10^18 base units (`1000000000000000000`).
+  - To transfer **10 WSC**, enter: `10000000000000000000` (`10` followed by 18 zeros).
+  - To transfer **1 WSC**, enter: `1000000000000000000`.
+  - Click **transact** and confirm in MetaMask.
+
+> [!WARNING]
+> Never paste private keys into Remix source files or console. Always use MetaMask or a secure Web3 browser wallet for signing.
+
+---
+
+## 8. Distinguishing Local Tests vs. Sepolia Transactions
+
+| Property | Local Hardhat Test (`npm test`) | Real Sepolia Transaction (`npm run deploy:sepolia`) |
+|---|---|---|
+| **Network** | Ephemeral in-memory node | Ethereum Sepolia testnet |
+| **Persistence** | Resets after test completion | Permanent on the blockchain |
+| **Block Explorer** | None (in-memory only) | Verified on [Sepolia Etherscan](https://sepolia.etherscan.io) |
+| **Transaction Fee** | Simulated 0 ETH gas | Requires real SepoliaETH from faucets |
+| **Confirmation Time** | Instant (< 50ms) | ~12 seconds (Ethereum block time) |
+| **Execution Record** | Saved in `reports/test-report.json` | Saved in `deployments/sepolia.json` |
